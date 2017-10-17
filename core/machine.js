@@ -153,25 +153,26 @@ class Machine {
     const requestParams = wrapperParams(node, context)
     console.log(color.info(JSON.stringify(requestParams, null, 2)))
     const res = await httpRequest(requestParams)
-    // const res = resArr[this.currentNumber]
 
-    console.log(color.highlight('body 等值比较'))
-    const equalError = deepEqual(res.body, node.equal)
-    if (equalError !== undefined) {
-      console.error(color.error('等值比较失败'))
-      console.error(equalError)
-      throw equalError
-    }
-    console.log(color.success('等值比较通过'))
+    if (res.body !== undefined && res.body !== null) {
+      console.log(color.highlight('body 等值比较'))
+      const equalError = deepEqual(res.body, node.equal)
+      if (equalError !== undefined) {
+        console.error(color.error('等值比较失败'))
+        console.error(equalError)
+        throw equalError
+      }
+      console.log(color.success('等值比较通过'))
 
-    console.log(color.highlight('body 规则匹配'))
-    const ruleError = parameter.validate(node.rule, res.body)
-    if (ruleError !== undefined) {
-      console.error(color.error('匹配不符合预期'))
-      console.error(ruleError)
-      throw ruleError
+      console.log(color.highlight('body 规则匹配'))
+      const ruleError = parameter.validate(node.rule, res.body)
+      if (ruleError !== undefined) {
+        console.error(color.error('匹配不符合预期'))
+        console.error(ruleError)
+        throw ruleError
+      }
+      console.log(color.success('匹配符合预期'))
     }
-    console.log(color.success('匹配符合预期'))
 
     inject(this.context, res.body, node.context)
     console.log(color.info('追加 body 到当前上下文'), this.context)
