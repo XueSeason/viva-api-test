@@ -11,15 +11,14 @@ program
   .option('-d, --dir [string]', 'test case directory')
   .parse(process.argv)
 
-let dir
 if (typeof program.dir === 'string') {
-  dir = path.resolve(process.cwd(), program.dir)
+  process.workspace = path.resolve(process.cwd(), program.dir)
 } else {
-  dir = path.resolve(process.cwd(), './')
+  process.workspace = path.resolve(process.cwd(), './')
 }
 
 ;(async function () {
-  for (const suit of listCases(dir)) {
+  for (const suit of listCases(process.workspace)) {
     const machine = new Machine(suit.data)
     await machine.run()
   }

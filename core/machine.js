@@ -1,3 +1,4 @@
+const path = require('path')
 const Parameter = require('parameter')
 const color = require('../common/color')
 const { httpRequest } = require('../common/util')
@@ -122,17 +123,33 @@ function recursiveReplace (obj, regex, value) {
 }
 // 根据上下文封装请求参数
 function wrapperParams (node, context) {
-  let { method, host, path, query, body } = JSON.parse(JSON.stringify(node))
+  let { method, host, path: urlPath, query, body } = JSON.parse(JSON.stringify(node))
   method = method || 'GET'
-  // path, query, body
+  // urlPath, query, body
   const flattening = flattenObject(context)
   for (const key of Object.keys(flattening)) {
     const regex = new RegExp('\\${' + key + '}', 'g')
-    path = path.replace(regex, flattening[key])
+    urlPath = urlPath.replace(regex, flattening[key])
     recursiveReplace(query, regex, flattening[key])
     recursiveReplace(body, regex, flattening[key])
   }
-  return { method, host, path, query, body }
+  // filter
+  if (typeof node.filter === 'object') {
+    const filters = Object.keys(node.filter)
+    for (const filter of filters) {
+      const filename = path.join(process.workspace, 'filters', `${filter}.js`)
+      const foo = require(filename)
+      const target = node.filter[filter]
+      if (target === 'body') {
+        body = foo(body)
+      } else if (target === 'query') {
+        query = foo(query)
+      } else if (target === 'path') {
+        urlPath = foo(urlPath)
+      }
+    }
+  }
+  return { method, host, path: urlPath, query, body }
 }
 
 class Machine {
