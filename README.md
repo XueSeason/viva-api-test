@@ -6,6 +6,7 @@ viva-api-test 是一个 REST API 测试工具
 - **上下文变量:** viva-api-test 可以保存接口调用的上下文变量，这些变量可以在随后的接口调用时被使用。
 - **模块化:** 封装每个测试用例成为模块，可以无痛地衔接每个测试用例，构造一个复杂的业务测试流程。
 - **结果校验:** 方便校验接口调用结果，错误提示友好。
+- **插件配置:** 可以编写插件脚本，对请求进行特殊处理。
 
 ## Guide
 
@@ -120,9 +121,21 @@ viva-api-test 是一个 REST API 测试工具
 }
 ```
 
+#### filter [Object] `可为空`
+
+弥补配置文件无法满足的情况，调用指定过滤器方法处理请求参数
+
+例如:
+
+```js
+"filter": {
+  "md5": "body" // md5 为 filters 目录下的脚本方法，body 为需要处理的对象，目前只限定于 body path 和 query
+}
+```
+
 ## Example
 
-```json
+```js
 {
   "suit": "注册设备并创建投票", // 业务名称
   "context": {
@@ -147,6 +160,9 @@ viva-api-test 是一个 REST API 测试工具
     },
     "context": {
       "token": "token" // ${token} 为 body 返回的值，并设置为上下文变量
+    },
+    "filter": {
+      "md5": "body" // 调用同级 filters 目录内部的 md5 脚本对 body 进行加工处理
     }
   }, {
     "import": ["token", "uid"], // 导入上下文变量 token
