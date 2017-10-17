@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "export VIVA_ENV='qa' && mocha --recursive",
-    "test-pre": "export VIVA_ENV='pre' && mocha --recursive"
+  "bin": {
+    "viva-api-test": "index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "chalk": "^2.1.0",
+    "commander": "^2.11.0",
     "parameter": "^2.2.0",
     "power-assert": "^1.4.4",
     "request": "^2.83.0",
