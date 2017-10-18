@@ -79,6 +79,7 @@ async function httpRequest ({ method, host, path, contentType, query, body }) {
   } catch (error) {
     console.error(error.options)
     console.error(error.error)
+    console.error('statusCode:', error.statusCode)
     return { status: error.statusCode, body: error.error }
   }
 }

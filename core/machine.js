@@ -143,34 +143,39 @@ class Machine {
     console.log(color.highlight(`-----------------------${node.desc}-------------------------`))
     const context = extract(this.context, node.import)
 
-    console.log(color.highlight('开始访问接口'))
     const requestParams = wrapperParams(node, context)
+    console.log(color.highlight('开始访问接口'))
     const res = await httpRequest(requestParams)
 
     if (res.body !== undefined && res.body !== null) {
       console.log(color.highlight('body 等值比较'))
-      const equalError = deepEqual(res.body, objectTemplate(node.equal, context))
+      const equl = objectTemplate(node.equal, context)
+      const equalError = deepEqual(res.body, equl)
       if (equalError !== undefined) {
         console.error(color.error('等值比较失败'))
         console.error(equalError)
-        console.log(color.error('当前上下文变量:'), context)
+        console.log(color.error('当前上下文变量:\n'), JSON.stringify(context, null, 2))
+        console.log(color.error('当前返回 body:\n'), JSON.stringify(res.body, null, 2))
+        console.log(color.error('当前返回 equal:\n'), JSON.stringify(equl, null, 2))
         throw equalError
       }
       console.log(color.success('等值比较通过'))
 
       console.log(color.highlight('body 规则匹配'))
-      const ruleError = parameter.validate(node.rule, res.body)
+      const rule = node.rule
+      const ruleError = parameter.validate(rule, res.body)
       if (ruleError !== undefined) {
         console.error(color.error('匹配不符合预期'))
         console.error(ruleError)
-        console.log(color.error('当前上下文变量:'), context)
+        console.log(color.error('当前上下文变量:\n'), JSON.stringify(context, null, 2))
+        console.log(color.error('当前返回 body:\n'), JSON.stringify(res.body, null, 2))
+        console.log(color.error('当前返回 rule:\n'), JSON.stringify(rule, null, 2))
         throw ruleError
       }
       console.log(color.success('匹配符合预期'))
     }
 
     inject(this.context, res.body, node.context)
-    console.log(color.info('追加 body 到当前上下文'), this.context)
   }
 
   async run () {
