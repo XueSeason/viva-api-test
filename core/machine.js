@@ -114,6 +114,7 @@ function recursiveReplace (obj, regex, value) {
     if (typeof obj[key] === 'object') {
       recursiveReplace(obj[key], regex, value)
     } else if (typeof obj[key] === 'string') {
+      // 后续优化，需要考虑转义等情况
       obj[key] = obj[key].replace(regex, value)
       if (typeof value === 'number') {
         obj[key] = Number(obj[key])
@@ -141,11 +142,11 @@ function wrapperParams (node, context) {
       const foo = require(filename)
       const target = node.filter[filter]
       if (target === 'body') {
-        body = foo(body)
+        body = foo(body, node, context)
       } else if (target === 'query') {
-        query = foo(query)
+        query = foo(query, node, context)
       } else if (target === 'path') {
-        urlPath = foo(urlPath)
+        urlPath = foo(urlPath, node, context)
       }
     }
   }
