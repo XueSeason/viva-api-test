@@ -94,7 +94,7 @@ viva-api-test 是一个 REST API 测试工具
 
 [Example](https://github.com/node-modules/parameter/blob/master/example.js)
 
-#### equal [Object] `可为空`
+#### equal [Object] `可配置` `可为空`
 
 对返回的 body 进行等值比较。
 
@@ -123,7 +123,7 @@ viva-api-test 是一个 REST API 测试工具
 
 #### filter [Object] `可为空`
 
-弥补配置文件无法满足的情况，调用指定过滤器方法处理请求参数
+弥补配置文件无法满足的情况，调用指定过滤器方法处理请求参数。需要注意的是 filter 的执行时间是在构建请求时执行，filter 执行完毕后会立刻发送请求。
 
 例如:
 
