@@ -83,57 +83,57 @@ function deepEqual (target, source) {
   recursiveEqual(target, source, errors, keyTrack)
   return errors.length === 0 ? undefined : errors
 }
-// 递归拍平
-function recursiveFlatten (obj, result, keyTrack) {
-  const keys = Object.keys(obj)
-  for (const key of keys) {
-    const value = obj[key]
-    if (typeof value === 'object') {
-      keyTrack.push(key)
-      recursiveFlatten(value, result, keyTrack)
-    } else {
-      keyTrack.push(key)
-      result[keyTrack.join('.')] = value
-      keyTrack.length = 0
+// 字符串模板实现
+function stringTemplate (template, context) {
+  const regex = /(\\)?\$(\\)?\{([^{}\\]+)(\\)?\}/g
+  const str = template.replace(regex, (world, slash1, slash2, token, slash3) => {
+    if (slash1 || slash2 || slash3) {
+      return world.replace(/\\/g, '')
     }
-  }
+    const variables = token.trim().split('.')
+    let current = JSON.parse(JSON.stringify(context))
+    for (const variable of variables) {
+      current = current[variable]
+      if (current === undefined || current === null) {
+        console.warn(color.warn(`${variable} 无法被索引`))
+        return ''
+      }
+    }
+    return current
+  })
+  return str
 }
-// 拍平对象
-function flattenObject (obj) {
-  const result = {}
-  const keyTrack = []
-  recursiveFlatten(obj, result, keyTrack)
-  return result
-}
-// 递归替换
-function recursiveReplace (obj, regex, value) {
-  if (typeof obj !== 'object') {
-    return
+// 对象模板实现
+function objectTemplate (target, context) {
+  if (typeof target !== 'object') {
+    return target
   }
-  for (const key of Object.keys(obj)) {
-    if (typeof obj[key] === 'object') {
-      recursiveReplace(obj[key], regex, value)
-    } else if (typeof obj[key] === 'string') {
-      // 后续优化，需要考虑转义等情况
-      obj[key] = obj[key].replace(regex, value)
-      if (typeof value === 'number') {
-        obj[key] = Number(obj[key])
+  const obj = JSON.parse(JSON.stringify(target))
+
+  function recursive (mutation, context) {
+    for (const key of Object.keys(mutation)) {
+      if (typeof mutation[key] === 'object') {
+        recursive(mutation[key], context)
+      } else if (typeof mutation[key] === 'string') {
+        mutation[key] = stringTemplate(mutation[key], context)
+        if (typeof mutation[key] === 'number') {
+          mutation[key] = Number(mutation[key])
+        }
       }
     }
   }
+  recursive(obj, context)
+  return obj
 }
 // 根据上下文封装请求参数
 function wrapperParams (node, context) {
   let { method, host, path: urlPath, query, body } = JSON.parse(JSON.stringify(node))
   method = method || 'GET'
-  // urlPath, query, body
-  const flattening = flattenObject(context)
-  for (const key of Object.keys(flattening)) {
-    const regex = new RegExp('\\${' + key + '}', 'g')
-    urlPath = urlPath.replace(regex, flattening[key])
-    recursiveReplace(query, regex, flattening[key])
-    recursiveReplace(body, regex, flattening[key])
-  }
+  // stringTemplate
+  urlPath = stringTemplate(urlPath, context)
+  query = objectTemplate(query, context)
+  body = objectTemplate(body, context)
+  console.log(body)
   // filter
   if (typeof node.filter === 'object') {
     const filters = Object.keys(node.filter)
