@@ -68,7 +68,7 @@ function recursiveEqual (target, source, errors, keyTrack) {
       } else if (source[key] !== target[key]) {
         keyTrack.push(key)
         errors.push({
-          message: `${target[key]} not equal ${source[key]}`,
+          message: `type ${typeof target[key]} ${target[key]} not equal type ${typeof source[key]} ${source[key]}`,
           field: keyTrack.join('.'),
           code: 'not_equal'
         })
@@ -86,6 +86,7 @@ function deepEqual (target, source) {
 // 字符串模板实现
 function stringTemplate (template, context) {
   const regex = /(\\)?\$(\\)?\{([^{}\\]+)(\\)?\}/g
+  let typeStr = 'string' // 还原类型
   const str = template.replace(regex, (world, slash1, slash2, token, slash3) => {
     if (slash1 || slash2 || slash3) {
       return world.replace(/\\/g, '')
@@ -99,9 +100,17 @@ function stringTemplate (template, context) {
         return ''
       }
     }
+    typeStr = typeof current
     return current
   })
-  return str
+
+  if (typeStr === 'number') {
+    return Number(str)
+  } else if (typeStr === 'boolean') {
+    return Boolean(str)
+  } else {
+    return str
+  }
 }
 // 对象模板实现
 function objectTemplate (target, context) {
@@ -116,9 +125,6 @@ function objectTemplate (target, context) {
         recursive(mutation[key], context)
       } else if (typeof mutation[key] === 'string') {
         mutation[key] = stringTemplate(mutation[key], context)
-        if (typeof mutation[key] === 'number') {
-          mutation[key] = Number(mutation[key])
-        }
       }
     }
   }
@@ -133,7 +139,6 @@ function wrapperParams (node, context) {
   urlPath = stringTemplate(urlPath, context)
   query = objectTemplate(query, context)
   body = objectTemplate(body, context)
-  console.log(body)
   // filter
   if (typeof node.filter === 'object') {
     const filters = Object.keys(node.filter)
@@ -174,7 +179,7 @@ class Machine {
 
     if (res.body !== undefined && res.body !== null) {
       console.log(color.highlight('body 等值比较'))
-      const equalError = deepEqual(res.body, node.equal)
+      const equalError = deepEqual(res.body, objectTemplate(node.equal, context))
       if (equalError !== undefined) {
         console.error(color.error('等值比较失败'))
         console.error(equalError)
