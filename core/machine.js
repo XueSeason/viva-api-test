@@ -1,7 +1,7 @@
 const path = require('path')
 const Parameter = require('parameter')
 const color = require('../common/color')
-const { httpRequest } = require('../common/util')
+const { httpRequest, stringTemplate } = require('../common/util')
 
 const parameter = new Parameter()
 
@@ -83,35 +83,6 @@ function deepEqual (target, source) {
   recursiveEqual(target, source, errors, keyTrack)
   return errors.length === 0 ? undefined : errors
 }
-// 字符串模板实现
-function stringTemplate (template, context) {
-  const regex = /(\\)?\$(\\)?\{([^{}\\]+)(\\)?\}/g
-  let typeStr = 'string' // 还原类型
-  const str = template.replace(regex, (world, slash1, slash2, token, slash3) => {
-    if (slash1 || slash2 || slash3) {
-      return world.replace(/\\/g, '')
-    }
-    const variables = token.trim().split('.')
-    let current = JSON.parse(JSON.stringify(context))
-    for (const variable of variables) {
-      current = current[variable]
-      if (current === undefined || current === null) {
-        console.warn(color.warn(`${variable} 无法被索引`))
-        return ''
-      }
-    }
-    typeStr = typeof current
-    return current
-  })
-
-  if (typeStr === 'number') {
-    return Number(str)
-  } else if (typeStr === 'boolean') {
-    return Boolean(str)
-  } else {
-    return str
-  }
-}
 // 对象模板实现
 function objectTemplate (target, context) {
   if (typeof target !== 'object') {
@@ -133,8 +104,9 @@ function objectTemplate (target, context) {
 }
 // 根据上下文封装请求参数
 function wrapperParams (node, context) {
-  let { method, host, path: urlPath, query, body } = JSON.parse(JSON.stringify(node))
+  let { method, host, path: urlPath, contentType, query, body } = JSON.parse(JSON.stringify(node))
   method = method || 'GET'
+  contentType = contentType || 'json'
   // stringTemplate
   urlPath = stringTemplate(urlPath, context)
   query = objectTemplate(query, context)
@@ -144,6 +116,7 @@ function wrapperParams (node, context) {
     const filters = Object.keys(node.filter)
     for (const filter of filters) {
       const filename = path.join(process.workspace, 'filters', `${filter}.js`)
+      console.log(color.highlight(`加载插件 ${filter}`))
       const foo = require(filename)
       const target = node.filter[filter]
       if (target === 'body') {
@@ -155,7 +128,7 @@ function wrapperParams (node, context) {
       }
     }
   }
-  return { method, host, path: urlPath, query, body }
+  return { method, host, path: urlPath, contentType, query, body }
 }
 
 class Machine {
@@ -168,13 +141,10 @@ class Machine {
 
   async reduce (node) {
     console.log(color.highlight(`-----------------------${node.desc}-------------------------`))
-    // 当前上下文
     const context = extract(this.context, node.import)
-    console.log(color.info('当前上下文变量:'), context)
 
     console.log(color.highlight('开始访问接口'))
     const requestParams = wrapperParams(node, context)
-    console.log(color.info(JSON.stringify(requestParams, null, 2)))
     const res = await httpRequest(requestParams)
 
     if (res.body !== undefined && res.body !== null) {
@@ -183,6 +153,7 @@ class Machine {
       if (equalError !== undefined) {
         console.error(color.error('等值比较失败'))
         console.error(equalError)
+        console.log(color.error('当前上下文变量:'), context)
         throw equalError
       }
       console.log(color.success('等值比较通过'))
@@ -192,6 +163,7 @@ class Machine {
       if (ruleError !== undefined) {
         console.error(color.error('匹配不符合预期'))
         console.error(ruleError)
+        console.log(color.error('当前上下文变量:'), context)
         throw ruleError
       }
       console.log(color.success('匹配符合预期'))
