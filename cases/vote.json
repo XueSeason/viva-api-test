@@ -1,11 +1,15 @@
 {
   "suit": "注册设备并创建投票",
   "context": {
-    "uid": "vivatest"
+    "uid": "vivatest",
+    "s": {
+      "result": true
+    }
   },
   "steps": [{
       "import": [
-        "uid"
+        "uid",
+        "s.result"
       ],
       "desc": "注册设备",
       "method": "PUT",
@@ -18,7 +22,7 @@
         "result": "bool"
       },
       "equal": {
-        "result": true
+        "result": "${s.result}"
       },
       "context": {
         "token": "token"

@@ -157,8 +157,8 @@ class Machine {
     const res = await httpRequest(requestParams)
 
     if (res.body !== undefined && res.body !== null) {
-      const equl = objectTemplate(node.equal, context)
-      const equalError = deepEqual(res.body, equl)
+      const equal = objectTemplate(node.equal, context)
+      const equalError = deepEqual(res.body, equal)
       if (equalError !== undefined) {
         this.eachStepReceivedError &&
           this.eachStepReceivedError(equalError, 'equal', { context, body: res.body, validate: equal })
