@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "bin": {
-    "viva-api-test": "index.js"
+    "viva-api-test": "./bin/cli.js"
   },
   "keywords": [],
   "author": "",
