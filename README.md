@@ -8,6 +8,15 @@ viva-api-test 是一个 REST API 测试工具
 - **结果校验:** 方便校验接口调用结果，错误提示友好。
 - **插件配置:** 可以编写插件脚本，对请求进行特殊处理。
 
+## 安装和使用
+
+```shell
+# install
+npm install -g viva-api-test
+# 指定 JSON 所在目录，运行测试脚本
+viva-api-test -d ./testcases
+```
+
 ## Guide
 
 ### 配置
