@@ -2,10 +2,10 @@
 
 const path = require('path')
 const program = require('commander')
-const Machine = require('./core/machine')
-const { listCases } = require('./common/util')
-const pkg = require('./package.json')
-const color = require('./common/color')
+const Machine = require('../core/machine')
+const { listCases } = require('../common/util')
+const pkg = require('../package.json')
+const color = require('../common/color')
 const ora = require('ora')
 
 program
