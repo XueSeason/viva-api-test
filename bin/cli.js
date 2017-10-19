@@ -33,6 +33,7 @@ if (typeof program.dir === 'string') {
       },
       eachStepWillUnmount (node) {
         this.spinner.succeed(`${node.desc}`)
+        this.spinner.stop()
       },
       eachStepReceivedError (error, type, { context, body, validate }) {
         this.spinner.fail(`${type} 校验不一致`)
