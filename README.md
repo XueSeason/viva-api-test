@@ -1,5 +1,7 @@
 # viva-api-test
 
+![terminal](https://raw.githubusercontent.com/XueSeason/viva-api-test/master/terminal.png)
+
 viva-api-test 是一个 REST API 测试工具
 
 - **声明式:** 只需编写 JSON 配置文件，viva-api-test 可以友好地创建测试用例。
