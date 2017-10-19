@@ -32,7 +32,7 @@ if (typeof program.dir === 'string') {
         this.spinner = ora(node.desc).start()
       },
       eachStepWillUnmount (node) {
-        this.spinner.succeed(`${node.desc} 通过`)
+        this.spinner.succeed(`${node.desc}`)
       },
       eachStepReceivedError (error, type, { context, body, validate }) {
         this.spinner.fail(`${type} 校验不一致`)
