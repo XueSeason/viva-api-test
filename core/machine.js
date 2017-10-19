@@ -1,6 +1,5 @@
 const path = require('path')
 const Parameter = require('parameter')
-const color = require('../common/color')
 const { httpRequest, stringTemplate } = require('../common/util')
 
 const parameter = new Parameter()
@@ -116,7 +115,6 @@ function wrapperParams (node, context) {
     const filters = Object.keys(node.filter)
     for (const filter of filters) {
       const filename = path.join(process.workspace, 'filters', `${filter}.js`)
-      console.log(color.highlight(`加载插件 ${filter}`))
       const foo = require(filename)
       const target = node.filter[filter]
       if (target === 'body') {
@@ -132,60 +130,60 @@ function wrapperParams (node, context) {
 }
 
 class Machine {
-  constructor ({ suit, steps, context }) {
+  constructor (
+    { suit, steps, context },
+    {
+      suitDidMount, suitWillUnmount,
+      eachStepWillMount, eachStepWillRequest, eachStepReceivedError, eachStepWillUnmount
+    }) {
     this.currentNumber = 0
     this.suit = suit
     this.steps = steps
     this.context = Object.assign({}, context)
+
+    if (suitDidMount) this.suitDidMount = suitDidMount.bind(this)
+    if (suitWillUnmount) this.suitWillUnmount = suitWillUnmount.bind(this)
+    if (eachStepWillMount) this.eachStepWillMount = eachStepWillMount.bind(this)
+    if (eachStepWillRequest) this.eachStepWillRequest = eachStepWillRequest.bind(this)
+    if (eachStepReceivedError) this.eachStepReceivedError = eachStepReceivedError.bind(this)
+    if (eachStepWillUnmount) this.eachStepWillUnmount = eachStepWillUnmount.bind(this)
   }
 
   async reduce (node) {
-    console.log(color.highlight(`-----------------------${node.desc}-------------------------`))
     const context = extract(this.context, node.import)
 
     const requestParams = wrapperParams(node, context)
-    console.log(color.highlight('开始访问接口'))
+    this.eachStepWillRequest && this.eachStepWillRequest(requestParams)
     const res = await httpRequest(requestParams)
 
     if (res.body !== undefined && res.body !== null) {
-      console.log(color.highlight('body 等值比较'))
       const equl = objectTemplate(node.equal, context)
       const equalError = deepEqual(res.body, equl)
       if (equalError !== undefined) {
-        console.error(color.error('等值比较失败'))
-        console.error(equalError)
-        console.log(color.error('当前上下文变量:\n'), JSON.stringify(context, null, 2))
-        console.log(color.error('当前返回 body:\n'), JSON.stringify(res.body, null, 2))
-        console.log(color.error('当前返回 equal:\n'), JSON.stringify(equl, null, 2))
-        throw equalError
+        this.eachStepReceivedError &&
+          this.eachStepReceivedError(equalError, 'equal', { context, body: res.body, validate: equal })
       }
-      console.log(color.success('等值比较通过'))
 
-      console.log(color.highlight('body 规则匹配'))
       const rule = node.rule
       const ruleError = parameter.validate(rule, res.body)
       if (ruleError !== undefined) {
-        console.error(color.error('匹配不符合预期'))
-        console.error(ruleError)
-        console.log(color.error('当前上下文变量:\n'), JSON.stringify(context, null, 2))
-        console.log(color.error('当前返回 body:\n'), JSON.stringify(res.body, null, 2))
-        console.log(color.error('当前返回 rule:\n'), JSON.stringify(rule, null, 2))
-        throw ruleError
+        this.eachStepReceivedError &&
+          this.eachStepReceivedError(ruleError, 'rule', { context, body: res.body, validate: rule })
       }
-      console.log(color.success('匹配符合预期'))
     }
 
     inject(this.context, res.body, node.context)
   }
 
   async run () {
-    console.log(color.success(`---------------------${this.suit} 测试开始-----------------------`))
+    this.suitDidMount && this.suitDidMount()
     while (!this.isDone) {
-      // 处理测试单元
+      this.eachStepWillMount && this.eachStepWillMount(this.currentNode)
       await this.reduce(this.currentNode)
+      this.eachStepWillUnmount && this.eachStepWillUnmount(this.currentNode)
       this.currentNumber++
     }
-    console.log(color.success(`---------------------${this.suit} 测试完毕-----------------------`))
+    this.suitWillUnmount && this.suitWillUnmount()
   }
 
   get currentNode () {
